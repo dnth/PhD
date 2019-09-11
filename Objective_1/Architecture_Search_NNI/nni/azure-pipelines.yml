@@ -1,0 +1,71 @@
+jobs:
+- job: 'basic_test_pr_ubuntu'
+  pool:
+    vmImage: 'Ubuntu 16.04'
+  strategy:
+    matrix:
+      Python36:
+        PYTHON_VERSION: '3.6'
+
+  steps:
+  - script: python3 -m pip install --upgrade pip setuptools --user
+    displayName: 'Install python tools'
+  - script: |
+      source install.sh
+    displayName: 'Install nni toolkit via source code'
+  - script: |
+      python3 -m pip install flake8 --user
+      IGNORE=./tools/nni_annotation/testcase/*:F821,./examples/trials/mnist-nas/*/mnist*.py:F821
+      python3 -m flake8 . --count --per-file-ignores=$IGNORE --select=E9,F63,F72,F82 --show-source --statistics
+    displayName: 'Run flake8 tests to find Python syntax errors and undefined names'
+  - script: |
+      cd test
+      source unittest.sh
+    displayName: 'Unit test'
+  - script: |
+      cd test
+      PATH=$HOME/.local/bin:$PATH python3 naive_test.py
+    displayName: 'Naive test'
+  - script: |
+      cd test
+      PATH=$HOME/.local/bin:$PATH python3 tuner_test.py
+    displayName: 'Built-in tuners / assessors tests'
+  - script: |
+      cd test
+      PATH=$HOME/.local/bin:$PATH python3 metrics_test.py
+    displayName: 'Trial job metrics test'
+  - script: |
+      cd test
+      PATH=$HOME/.local/bin:$PATH python3 cli_test.py
+    displayName: 'nnicli test'
+
+- job: 'basic_test_pr_macOS'
+  pool:
+    vmImage: 'macOS 10.13'
+  strategy:
+    matrix:
+      Python36:
+        PYTHON_VERSION: '3.6'
+
+  steps:
+  - script: python3 -m pip install --upgrade pip setuptools
+    displayName: 'Install python tools'
+  - script: |
+      source install.sh
+    displayName: 'Install nni toolkit via source code'
+  - script: |
+      cd test
+      PATH=$HOME/Library/Python/3.7/bin:$PATH && source unittest.sh
+    displayName: 'Unit test'
+  - script: |
+      cd test
+      PATH=$HOME/Library/Python/3.7/bin:$PATH python3 naive_test.py
+    displayName: 'Naive test'
+  - script: |
+      cd test
+      PATH=$HOME/Library/Python/3.7/bin:$PATH python3 tuner_test.py
+    displayName: 'Built-in tuners / assessors tests'
+  - script: |
+      cd test
+      PATH=$HOME/Library/Python/3.7/bin:$PATH python3 cli_test.py
+    displayName: 'nnicli test'
